@@ -1,0 +1,671 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="nse.weStore">
+
+ 	<!-- 음식점 영업여부 조회 -->
+	<select id="selectUser" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT * FROM WE_USER 
+	</select>
+
+ 	<!-- 사용자 정보 한건 조회 -->
+	<select id="selectUserOne" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT * FROM WE_USER 
+    	WHERE USER_ID = #{userId}
+	</select>
+
+	<!-- 해당 영업점의 대기인원수가 N번인 사람을 찾는다. -->
+	<select id="selectStoreUserNumber5One" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT * FROM WE_USER
+        WHERE USER_ID = (SELECT USER_ID FROM WE_TICKET
+        WHERE STORE_ID = #{storeId}
+        AND ORDER_ID =  (SELECT CALL_CNT FROM WE_STORE WHERE STORE_ID = #{storeId}))
+	</select>
+
+ 	<!-- 음식점 한건 조회 -->
+	<select id="selectStoreOne" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT * FROM WE_STORE
+        WHERE STORE_ID = #{storeId}
+	</select>
+
+ 	<!-- 난수코드조회 -->
+	<select id="selectUserCode" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT CODE FROM WE_IDCODE
+        WHERE TICKET_ID = (SELECT TICKET_ID FROM WE_TICKET
+        WHERE USER_ID = #{userId})
+	</select>
+	
+ 	<!-- 음식점 영업여부 조회 -->
+	<select id="selectStoreState" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT OPEN_STATE FROM WE_STORE
+		WHERE STORE_ID = #{storeId} 
+	</select>
+
+ 	<!-- 이미 대기중인 대기표가 있는지 조회 -->
+	<select id="selectExistUserTicket" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT * FROM WE_TICKET
+		WHERE USER_ID = #{userId} 
+	</select>
+
+ 	<!-- 티켓정보 조회 -->
+	<select id="selectUserTicket" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT * FROM WE_TICKET
+		WHERE USER_ID = #{userId} 
+	</select>
+
+ 	<!-- 대기순서 구하기  -->
+	<select id="selectStoreTicketOrder" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT 
+		    DECODE(MAX(ORDER_ID),NULL,1,MAX(ORDER_ID)+1) AS ORDER_ID 
+		FROM WE_TICKET
+		WHERE STORE_ID = #{storeId}
+	</select>
+	
+	<!-- 음식점목록조회  -->
+	<select id="selectStoreAllList" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT
+		    B.STORE_ID
+		    , B.STORE_NAME
+            , CASE WHEN B.DISTANCE >= 1000 THEN ROUND(( B.DISTANCE / 1000 ),1) || 'km'  ELSE B.DISTANCE || 'm' END DISTANCE
+		    , B.STORE_TYPE_CD
+		    , B.STORE_TYPE_NAME
+		    , B.TOTAL_WAIT_CNT
+		    , B.WAIT_CNT
+		    , ( TO_NUMBER(B.WAIT_MEANTIME) * TO_NUMBER(B.WAIT_CNT)) AS EXPECT_TIME 
+            , (SELECT SAVE_PATH || ORG_FILE_NAME FROM WE_ATTACH_FILE WHERE FILE_ID = B.FILE_ID ) AS MAIN_IMG_FILE
+		    , DECODE(B.WAIT_YN, 0, 'FALSE', 'TRUE') AS WAIT_YN
+		    , DECODE(B.OPEN_STATE,'OPEN','TRUE','FALSE') AS OPEN_STATE
+    		, NVL(RATE, 0) AS RATE
+		FROM (
+		    SELECT
+		        A.STORE_ID
+		        , A.STORE_NAME
+                , ROUND(6371 * ACOS( COS( C.LAT * 0.017453293 ) * COS( #{lat} * 0.017453293 ) * COS( (#{lon} * 0.017453293) - (C.LON * 0.017453293)) + SIN( C.LAT * 0.017453293 ) * SIN( #{lat} * 0.017453293 ) ) * 1000) AS DISTANCE
+                , A.STORE_TYPE AS STORE_TYPE_CD
+		        , A.STORE_TYPE AS STORE_TYPE_NAME
+		        , ( SELECT COUNT(*) FROM WE_TICKET_SUMMARY WHERE STORE_ID = A.STORE_ID AND OPEN_DAY = TO_CHAR(SYSDATE, 'YYYYMMDD') ) AS TOTAL_WAIT_CNT
+		        , ( SELECT COUNT(*) FROM WE_TICKET WHERE STORE_ID = A.STORE_ID ) AS WAIT_CNT
+		        , ( SELECT MAX(FILE_ID) FROM WE_STORE_IMG WHERE STORE_ID =  A.STORE_ID AND FIRST_YN = 'Y' ) AS FILE_ID
+		        , ( SELECT COUNT(*) FROM WE_TICKET WHERE USER_ID = #{userId} AND STORE_ID = A.STORE_ID ) AS WAIT_YN
+		        , A.OPEN_STATE
+		        , A.WAIT_MEANTIME
+		        , C.LAT
+		        , C.LON
+        		, ( SELECT AVG(RATE) AS RATE FROM WE_REVIEW WHERE STORE_ID = A.STORE_ID AND DEL_YN IS NULL ) AS RATE
+		    FROM WE_STORE A, WE_STORE_DETAILS C
+		    WHERE A.STORE_ID = C.STORE_ID (+)
+            AND A.USE_YN = 'Y'
+		) B
+		${orderStr}
+	</select>
+	
+	<!-- 음식점목록조회<간단>  -->
+	<select id="selectStoreAllListSimple" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT
+            B.STORE_ID
+            , B.STORE_NAME
+         	, DISTANCE
+            , B.STORE_TYPE_CD
+            , B.STORE_TYPE_NAME
+            , B.TOTAL_WAIT_CNT
+            , B.WAIT_CNT
+            , ( TO_NUMBER(B.WAIT_MEANTIME) * TO_NUMBER(B.WAIT_CNT)) AS EXPECT_TIME 
+            , (SELECT SAVE_PATH || ORG_FILE_NAME FROM WE_ATTACH_FILE WHERE FILE_ID = B.FILE_ID ) AS MAIN_IMG_FILE
+            , DECODE(B.WAIT_YN, 0, 'FALSE', 'TRUE') AS WAIT_YN
+            , DECODE(B.OPEN_STATE,'OPEN','TRUE','FALSE') AS OPEN_STATE
+            , NVL(RATE, 0) AS RATE
+        FROM (
+            SELECT
+                A.STORE_ID
+                , A.STORE_NAME
+             	, '위치정보를 사용할 수 없음' AS DISTANCE
+                , A.STORE_TYPE AS STORE_TYPE_CD
+                , A.STORE_TYPE AS STORE_TYPE_NAME
+                , ( SELECT COUNT(*) FROM WE_TICKET_SUMMARY WHERE STORE_ID = A.STORE_ID AND OPEN_DAY = TO_CHAR(SYSDATE, 'YYYYMMDD') ) AS TOTAL_WAIT_CNT
+                , ( SELECT COUNT(*) FROM WE_TICKET WHERE STORE_ID = A.STORE_ID ) AS WAIT_CNT
+                , ( SELECT MAX(FILE_ID) FROM WE_STORE_IMG WHERE STORE_ID =  A.STORE_ID AND FIRST_YN = 'Y' ) AS FILE_ID
+                , '0' AS WAIT_YN
+                , A.OPEN_STATE
+                , A.WAIT_MEANTIME
+                , C.LAT
+                , C.LON
+                , ( SELECT AVG(RATE) AS RATE FROM WE_REVIEW WHERE STORE_ID = A.STORE_ID AND DEL_YN IS NULL ) AS RATE
+            FROM WE_STORE A, WE_STORE_DETAILS C
+            WHERE A.STORE_ID = C.STORE_ID (+)
+            AND A.USE_YN = 'Y'
+        ) B
+        ${orderStr}
+	</select>
+	<!-- 음식점목록조회<간단>  -->
+	<select id="selectStoreAllListSimpleTest" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT
+            B.STORE_ID
+            , B.TOTAL_WAIT_CNT
+            , B.WAIT_CNT
+            , ( TO_NUMBER(B.WAIT_MEANTIME) * TO_NUMBER(B.WAIT_CNT)) AS EXPECT_TIME 
+            , DECODE(B.OPEN_STATE,'OPEN','TRUE','FALSE') AS OPEN_STATE
+        FROM (
+            SELECT
+                A.STORE_ID
+                , ( SELECT COUNT(*) FROM WE_TICKET_SUMMARY WHERE STORE_ID = A.STORE_ID AND OPEN_DAY = TO_CHAR(SYSDATE, 'YYYYMMDD') ) AS TOTAL_WAIT_CNT
+                , ( SELECT COUNT(*) FROM WE_TICKET WHERE STORE_ID = A.STORE_ID ) AS WAIT_CNT
+                , A.OPEN_STATE
+                , A.WAIT_MEANTIME
+            FROM WE_STORE A, WE_STORE_DETAILS C
+            WHERE A.STORE_ID = C.STORE_ID (+)
+        ) B
+	</select>
+	
+	<!-- 리뷰 조회 -->
+	<select id="selectReviewPrev" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT 
+            COUNT(*) AS MAX_CNT
+            , CEIL(COUNT(*) / 5) AS MAX_PAGE
+            , NVL(ROUND(AVG(RATE), 1),'0') AS RATE_AVG
+        FROM WE_REVIEW
+        WHERE STORE_ID = #{storeId}
+	</select>
+	
+	<!-- 리뷰 조회 -->
+	<select id="selectReview" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT 
+            USER_NAME
+            , RATE
+            , DETAIL
+            , REG_DATE
+            , TO_CHAR(REG_DATE , 'YYYY-MM-DD') AS REG_DATE_STR
+            , RN
+        FROM (
+        SELECT 
+            ( SELECT USER_NAME FROM WE_USER WHERE USER_ID = A.USER_ID ) AS USER_NAME,
+            RATE, 
+            REVIEW_CONTENT AS DETAIL, 
+            REG_TIME AS REG_DATE,
+            ROWNUM AS RN
+        FROM WE_REVIEW A
+        WHERE STORE_ID = #{storeId}
+        ORDER BY REG_DATE DESC
+        ) A
+        WHERE ( A.RN >= (${pageNum} * 5)-5 AND A.RN &lt;= ${pageNum} * 5 )
+	</select>
+	
+	<!-- 상세조회 -->
+	<select id="selectStoreDetails" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT 
+         STORE_NAME
+         , OPEN_STATE
+         , ADDRESS AS ADDR
+         , ADDRESS_ROAD AS ADDR_ROAD
+         , TEL AS PHONE
+         , LAT
+         , LON
+         , PARK_YN
+         , BALLET_YN
+         , MENU
+         , TOTAL_WAIT_CNT
+         , WAIT_CNT
+         , (WAIT_MEANTIME * WAIT_CNT) AS EXPECT_TIME
+         , WEEKDAY_TIME
+         , WEEKEND_TIME
+        FROM (
+                SELECT 
+                    A.STORE_NAME
+                    , CASE WHEN A.OPEN_STATE = 'OPEN' THEN 'TURE' ELSE 'FALSE' END OPEN_STATE
+                    , B.ADDRESS
+                    , B.ADDRESS_ROAD
+                    , B.TEL
+                    , B.LAT
+                    , B.LON
+                     , CASE WHEN B.BALLET_YN = 'Y' THEN 'TRUE' ELSE 'FALSE' END BALLET_YN
+                    , CASE WHEN B.PARK_YN = 'Y' THEN 'TRUE' ELSE 'FALSE' END PARK_YN
+                    , ( SELECT MENU_NAME FROM WE_MENU
+                        WHERE STORE_ID = A.STORE_ID
+                        AND FIRST_YN = 'Y'
+                        AND ROWNUM = 1
+                       ) AS MENU
+                    , ( SELECT COUNT(*) FROM WE_TICKET_SUMMARY WHERE STORE_ID = A.STORE_ID AND OPEN_DAY = TO_CHAR(SYSDATE, 'YYYYMMDD') ) AS TOTAL_WAIT_CNT
+                    , ( SELECT COUNT(*) FROM WE_TICKET WHERE STORE_ID = A.STORE_ID ) AS WAIT_CNT
+                    ,  A.WAIT_MEANTIME
+                    , B.WEEKDAY_TIME
+                    , B.WEEKEND_TIME
+                FROM WE_STORE A, WE_STORE_DETAILS B
+                WHERE A.STORE_ID = B.STORE_ID
+		        AND A.STORE_ID = #{storeId}
+		) C
+	</select>
+	
+	<!-- 상점 위도경도조회  -->
+	<select id="getStoreInfoMap" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT LAT,LON,A.STORE_ID 
+        FROM WE_STORE_DETAILS A, WE_STORE B
+        WHERE A.STORE_ID = B.STORE_ID
+        AND B.USE_YN = 'Y'
+	</select>
+	
+	
+	<!-- 대기표 저장 -->
+	<insert id="insertWeTicketSummary" parameterType="HashMap" >
+		<selectKey resultType="int" keyProperty="newId" order="BEFORE">
+			SELECT  WE_TICKET_ID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO WE_TICKET_SUMMARY
+		(TICKET_ID, REG_TIME, WAIT, TICKET_STATE, USER_ID, STORE_ID, OPEN_DAY, UPD_TIME, WAIT_START_TIME, USER_NAME)
+		VALUES
+		(#{newId}, SYSDATE, #{wait}, 'WAIT', #{userId}, #{storeId}, TO_CHAR(SYSDATE, 'YYYYMMDD'), SYSDATE, SYSDATE, #{userName})
+	</insert>
+	
+	<!-- 진행중 대기표 저장 -->
+	<insert id="insertWeTicket" parameterType="HashMap" >
+		INSERT INTO WE_TICKET
+		(REG_TIME, WAIT, TICKET_ID, USER_ID, STORE_ID, ORDER_ID)
+		VALUES
+		(SYSDATE, #{wait}, #{newId}, #{userId}, #{storeId}, #{orderId})
+	</insert>
+	
+	<!-- 대기표 저장 -->
+	<insert id="insertWeTicketSummaryByAdmin" parameterType="HashMap" >
+		<selectKey resultType="int" keyProperty="newId" order="BEFORE">
+			SELECT  WE_TICKET_ID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO WE_TICKET_SUMMARY
+		(TICKET_ID, REG_TIME, WAIT, TICKET_STATE, USER_ID, STORE_ID, OPEN_DAY, UPD_TIME, WAIT_START_TIME, USER_NAME, OPTION_ID, ENG_YN)
+		VALUES
+		(#{newId}, SYSDATE, #{wait}, 'WAIT', #{userId}, #{storeId}, TO_CHAR(SYSDATE, 'YYYYMMDD'), SYSDATE, SYSDATE, #{userName}, #{option}, #{engYn})
+	</insert>
+	
+	<!-- 진행중 대기표 저장 -->
+	<insert id="insertWeTicketByAdmin" parameterType="HashMap" >
+		INSERT INTO WE_TICKET
+		(REG_TIME, WAIT, TICKET_ID, USER_ID, STORE_ID, ORDER_ID, OPTION_ID, ENG_YN)
+		VALUES
+		(SYSDATE, #{wait}, #{newId}, #{userId}, #{storeId}, #{orderId}, #{option}, #{engYn})
+	</insert>
+	
+	<!-- 난수코드 저장  -->
+	<insert id="insertWeIdcode" parameterType="HashMap" >
+		INSERT INTO WE_IDCODE
+		(CODE, TICKET_ID) VALUES (#{code},#{newId})
+	</insert>
+	
+	<!-- 난수로 생성된 코드가 중복되는지 조회   -->
+	<select id="selectCheckCode" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT * FROM WE_IDCODE
+		WHERE CODE = #{code}
+	</select>
+	
+	<!-- 대기하는 상점의 정보<웹>   -->
+	<select id="selectStoreInfoWeb" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT 
+		    A.STORE_NAME
+		    , B.USER_NAME
+		    , B.WAIT
+		    , A.STORE_ID
+		FROM WE_STORE A, WE_TICKET_SUMMARY B, WE_IDCODE C
+		WHERE A.STORE_ID = B.STORE_ID
+		AND B.TICKET_ID = C.TICKET_ID
+		AND C.CODE = #{i}
+	</select>
+	
+	<!-- 오늘총기다린팀수   -->
+	<select id="selectTodayTotalCount" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT COUNT(*) AS TOTAL_WAIT_CNT
+		FROM WE_STORE A, WE_TICKET_SUMMARY B, WE_IDCODE C
+		WHERE A.STORE_ID = B.STORE_ID
+		AND B.TICKET_ID = C.TICKET_ID
+		AND C.CODE = #{i}
+		AND WAIT_START_TIME BETWEEN TO_DATE(TO_CHAR(SYSDATE, 'YYYYMMDD') || '000000', 'YYYYMMDDHH24MISS') AND TO_DATE(TO_CHAR(SYSDATE, 'YYYYMMDD') || '235959', 'YYYYMMDDHH24MISS')
+	</select>
+	
+	<!-- 남은팀수   -->
+	<select id="selectWaitCount" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT COUNT(*) AS WAIT_CNT
+		FROM WE_TICKET
+		WHERE STORE_ID = #{storeId}
+		AND ORDER_ID &lt; (
+		                                SELECT
+		                                D.ORDER_ID
+		                                FROM WE_STORE A, WE_TICKET_SUMMARY B, WE_IDCODE C, WE_TICKET D
+		                                WHERE A.STORE_ID = B.STORE_ID
+		                                AND B.TICKET_ID = C.TICKET_ID
+		                                AND C.TICKET_ID = D.TICKET_ID
+		                                AND C.CODE = #{i}
+		                            )
+	</select>
+	
+	
+	<!-- 매장 이미지 조회  -->
+	<select id="getStoreImg" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT
+            A.SAVE_PATH || A.ORG_FILE_NAME AS FILE_NAME
+            , B.SHOW_ORDER
+        FROM WE_ATTACH_FILE A, WE_STORE_IMG B
+        WHERE B.STORE_ID = #{storeId}
+        AND A.FILE_ID = B.FILE_ID
+        AND B.TYPE != 'LOGO'
+        ORDER BY B.SHOW_ORDER
+	</select>
+	
+	<!-- 마지막으로부터 지난시간조회   -->
+	<select id="getLastTicketTime" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT
+        	LAST_TIME
+        FROM(
+            SELECT 
+            ROUND(ABS(( WAIT_END_TIME - SYSDATE ) *24)) AS LAST_TIME 
+            FROM WE_TICKET_SUMMARY
+            WHERE USER_ID = #{userId}
+            AND TICKET_STATE = 'COMP'
+            ORDER BY UPD_TIME DESC
+        )
+        WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 최근지난이력 조회 -->
+	<select id="getLastTicketInfo" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT 
+            STORE_ID
+            , STORE_NAME
+            , TOTAL_WAIT_CNT
+            , PHONE
+            , USER_NAME
+            , WAIT
+            , WAIT_TIME
+            , TICKET_ID
+            , CASE WHEN REVIEW_CNT > 0 THEN 'FALSE' ELSE 'TRUE' END REVIEW_YN
+        FROM (
+            SELECT 
+                A.STORE_ID
+                , B.STORE_NAME
+                , ( SELECT COUNT(*) FROM WE_TICKET_SUMMARY WHERE STORE_ID = A.STORE_ID AND OPEN_DAY = TO_CHAR(SYSDATE, 'YYYYMMDD') ) AS TOTAL_WAIT_CNT
+                , C.TEL AS PHONE
+                , A.USER_NAME
+                , A.WAIT
+                , ROUND(ABS((A.WAIT_START_TIME - A.WAIT_END_TIME) * 24 *60)) AS WAIT_TIME
+            	, A.TICKET_ID
+                , (SELECT COUNT(*) FROM WE_REVIEW WHERE TICKET_ID = A.TICKET_ID ) AS REVIEW_CNT
+            FROM WE_TICKET_SUMMARY A, WE_STORE B, WE_STORE_DETAILS C
+            WHERE A.STORE_ID = B.STORE_ID
+            AND A.STORE_ID = C.STORE_ID
+            AND A.USER_ID = #{userId}
+            AND TICKET_STATE = 'COMP'
+            ORDER BY A.UPD_TIME DESC
+        )
+        WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 대기기본정보  -->
+	<select id="getWaitInfoBasic" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT
+    		  A.STORE_ID 
+            , A.STORE_NAME
+            , ( SELECT COUNT(*) FROM WE_TICKET_SUMMARY WHERE STORE_ID = A.STORE_ID AND OPEN_DAY = TO_CHAR(SYSDATE, 'YYYYMMDD') ) AS TOTAL_WAIT_CNT
+            , C.WAIT
+            , B.USER_NAME
+            , D.TEL AS PHONE
+        FROM WE_STORE A, WE_TICKET_SUMMARY B, WE_TICKET C, WE_STORE_DETAILS D
+        WHERE A.STORE_ID = B.STORE_ID
+        AND B.TICKET_ID = C.TICKET_ID
+        AND C.TICKET_ID = B.TICKET_ID
+        AND A.STORE_ID = D.STORE_ID
+        AND C.USER_ID = #{userId}
+	</select>
+	
+	<!-- 최근지난이력 조회 -->
+	<select id="getWaitInfoTIme" parameterType="HashMap" resultType="ExqueryMap" >
+    	WITH INFO AS (
+        SELECT 
+            STORE_ID
+            , USER_ID
+            , ORDER_ID
+            , TICKET_ID
+        FROM WE_TICKET
+        WHERE USER_ID = #{userId}
+        ) 
+        SELECT
+        Q.WAIT_CNT
+        , (W.WAIT_MEANTIME * Q.WAIT_CNT ) AS EXPECT_TIME
+        FROM ( 
+                SELECT COUNT(*) AS WAIT_CNT
+                FROM WE_TICKET A, INFO B
+                WHERE B.STORE_ID = A.STORE_ID
+                AND A.ORDER_ID &lt; B.ORDER_ID
+        ) Q, WE_STORE W, INFO E
+        WHERE E.STORE_ID = W.STORE_ID
+	</select>
+	
+	<!-- 미루기가능한지 체크 -->
+	<select id="getUserExistTicket" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT DELAY_YN, ORDER_ID, STORE_ID FROM WE_TICKET
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	<!-- 내 순서 조회  -->
+	<select id="getMyTicketId" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT 
+		ORDER_ID AS MY_ID
+		FROM WE_TICKET
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	<!-- MAX 순서조회  -->
+	<select id="getMaxTicketId" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT 
+		MAX(ORDER_ID) AS MAX_ID
+		FROM WE_TICKET
+		WHERE STORE_ID = (
+		                                SELECT STORE_ID FROM WE_TICKET WHERE USER_ID = #{userId}
+		                                )
+	</select>
+	
+	<!-- 표시순서 변경 일괄-1  -->
+	<select id="setOrderChange" parameterType="HashMap" resultType="ExqueryMap" >
+    	UPDATE WE_TICKET
+		SET ORDER_ID = ORDER_ID - 1
+		WHERE ( ${myId} &lt; ORDER_ID AND ORDER_ID &lt;= ${newId} )
+        AND STORE_ID = #{storeId}
+	</select>
+	
+	<!-- 표시순서 변경 일괄-1 (myId 보다큰것들만) -->
+	<select id="setOrderChange2" parameterType="HashMap" resultType="ExqueryMap" >
+    	UPDATE WE_TICKET
+		SET ORDER_ID = ORDER_ID - 1
+		WHERE ( ${orderId} &lt; ORDER_ID )
+        AND STORE_ID = #{storeId}
+	</select>
+	
+	<!-- 표시순서 변경   -->
+	<select id="setOrderChangeMyTicket" parameterType="HashMap" resultType="ExqueryMap" >
+    	UPDATE WE_TICKET
+		SET ORDER_ID = #{newId}, DELAY_YN = 'Y'
+		WHERE TICKET_ID = (SELECT 
+							TICKET_ID
+							FROM WE_TICKET
+							WHERE USER_ID = #{userId})
+	</select>
+	
+	<!-- 대기표 삭제   -->
+	<select id="deleteTicket" parameterType="HashMap" resultType="ExqueryMap" >
+    	DELETE WE_TICKET
+        WHERE TICKET_ID = (SELECT 
+                            TICKET_ID
+                            FROM WE_TICKET
+                            WHERE USER_ID = #{userId})
+	</select>
+	
+	<!-- 티켓정보수정 취소 -->
+	<update id="updateTicketInfo" parameterType="HashMap" >
+		UPDATE WE_TICKET_SUMMARY
+		<set>
+			TICKET_STATE = 'CANCEL',
+			UPD_TIME = SYSDATE 
+		</set>
+		WHERE TICKET_ID = (SELECT 
+                            TICKET_ID
+                            FROM WE_TICKET
+                            WHERE USER_ID = #{userId})
+	</update>
+	
+	<!-- 티켓정보수정 -->
+	<update id="updateTicketInfoEnd" parameterType="HashMap" >
+		UPDATE WE_TICKET_SUMMARY
+		<set>
+			TICKET_STATE = 'COMP',
+			UPD_TIME = SYSDATE ,
+			WAIT_END_TIME = SYSDATE , 
+			TOTAL_WAIT_TIME = ROUND((SYSDATE - REG_TIME) * 24 * 60)
+		</set>
+		WHERE TICKET_ID = (SELECT 
+                            TICKET_ID
+                            FROM WE_TICKET
+                            WHERE USER_ID = #{userId})
+	</update>
+	
+	<!-- 대기표 코드정보 삭제   -->
+	<select id="deleteTicketIdCode" parameterType="HashMap" resultType="ExqueryMap" >
+    	DELETE WE_IDCODE
+        WHERE TICKET_ID = (SELECT 
+                            TICKET_ID
+                            FROM WE_TICKET
+                            WHERE USER_ID = #{userId})
+	</select>
+	
+	<!-- 사용자 존재여부 조회   -->
+	<select id="selectExistUser" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT * FROM WE_USER WHERE USER_ID = #{userId}
+	</select>
+	
+	<!-- 사용자 존재여부 조회   -->
+	<select id="selectHistory" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT
+            STORE_NAME
+            , TOTAL_WAIT_TIME
+            , WAIT_END_TIME
+            , STORE_ID
+            , TICKET_ID
+            , CASE WHEN REVIEW_CNT > 0 THEN 'FALSE' ELSE 'TRUE' END REVIEW_YN
+        FROM (
+        SELECT
+            B.STORE_NAME
+            , TOTAL_WAIT_TIME
+            , TO_CHAR(WAIT_END_TIME, 'YYYY-MM-DD') AS WAIT_END_TIME
+            , A.STORE_ID
+            , A.TICKET_ID
+            , (SELECT COUNT(*) FROM WE_REVIEW WHERE TICKET_ID = A.TICKET_ID ) AS REVIEW_CNT
+        FROM WE_TICKET_SUMMARY A, WE_STORE B
+        WHERE A.STORE_ID = B.STORE_ID
+        AND USER_ID = #{userId}
+        AND TICKET_STATE = 'COMP'
+        ORDER BY A.REG_TIME DESC )
+	</select>
+	
+	<!-- 매장정보조회 한건    -->
+	<select id="selectStoreInfoOne" parameterType="HashMap" resultType="ExqueryMap" >
+    	        SELECT
+            B.STORE_ID
+            , B.STORE_NAME
+            , CASE WHEN B.DISTANCE >= 1000 THEN ROUND(( B.DISTANCE / 1000 ),1) || 'km'  ELSE B.DISTANCE || 'm' END DISTANCE
+            , B.STORE_TYPE_CD
+            , B.STORE_TYPE_NAME
+            , B.WAIT_CNT
+            , ( TO_NUMBER(B.WAIT_MEANTIME) * TO_NUMBER(B.WAIT_CNT)) AS EXPECT_TIME 
+            , DECODE(B.WAIT_YN, 0, 'FALSE', 'TRUE') AS WAIT_YN
+            , DECODE(B.OPEN_STATE,'OPEN','TRUE','FALSE') AS OPEN_STATE
+            , NVL(RATE, 0) AS RATE
+        FROM (
+            SELECT
+                A.STORE_ID
+                , A.STORE_NAME
+                , ROUND(6371 * ACOS( COS( C.LAT * 0.017453293 ) * COS( #{lat} * 0.017453293 ) * COS( (#{lon} * 0.017453293) - (C.LON * 0.017453293)) + SIN( C.LAT * 0.017453293 ) * SIN( #{lat} * 0.017453293 ) ) * 1000) AS DISTANCE
+                , A.STORE_TYPE AS STORE_TYPE_CD
+                , A.STORE_TYPE AS STORE_TYPE_NAME
+                , ( SELECT COUNT(*) FROM WE_TICKET WHERE STORE_ID = A.STORE_ID ) AS WAIT_CNT
+                , ( SELECT COUNT(*) FROM WE_TICKET WHERE USER_ID = '1' AND STORE_ID = A.STORE_ID ) AS WAIT_YN
+                , A.OPEN_STATE
+                , A.WAIT_MEANTIME
+                , C.LAT
+                , C.LON
+                , ( SELECT AVG(RATE) AS RATE FROM WE_REVIEW WHERE STORE_ID = A.STORE_ID AND DEL_YN IS NULL ) AS RATE
+            FROM WE_STORE A, WE_STORE_DETAILS C
+            WHERE A.STORE_ID = C.STORE_ID (+)
+            AND A.STORE_ID = #{storeId}
+        ) B
+        ORDER BY WAIT_CNT DESC
+	</select>
+	
+	<!-- 리뷰가 있는지 조회  -->
+	<select id="selectUserReview" parameterType="HashMap" resultType="ExqueryMap" >
+    	    SELECT COUNT(*) AS CNT FROM WE_REVIEW
+			WHERE TICKET_ID = #{ticketId} 
+	</select>
+	
+	<!-- 사용자와 티켓이 맞는지 조회  -->
+	<select id="selectUserReviewValidation" parameterType="HashMap" resultType="ExqueryMap" >
+    	    SELECT * FROM WE_TICKET_SUMMARY
+			WHERE USER_ID = #{userId}
+			AND TICKET_ID = #{ticketId} 
+	</select>
+	
+	<!-- 티켓 유효상태 체크  -->
+	<select id="selectIsExistTicketStat" parameterType="HashMap" resultType="ExqueryMap" >
+    	    SELECT 
+	            B.*
+	        FROM WE_TICKET B, WE_IDCODE C
+	        WHERE B.TICKET_ID = C.TICKET_ID
+	        AND C.CODE = #{i}
+	</select>
+	
+	<!-- 리뷰등록 -->
+	<insert id="insertReview" parameterType="HashMap" >
+		INSERT INTO WE_REVIEW
+		(USER_ID, TICKET_ID, RATE, REVIEW_CONTENT, STORE_ID, DEL_YN, REG_TIME)
+		VALUES
+		(#{userId}, #{ticketId}, #{rate}, #{review}, #{storeId}, 'N', SYSDATE)
+	</insert>
+	
+	<!-- 매장정보조회 한건    -->
+	<select id="selectStoreInfoOneByTablet" parameterType="HashMap" resultType="ExqueryMap" >
+    	 SELECT
+            B.STORE_ID
+            , B.STORE_NAME
+            , B.WAIT_CNT
+            , ( TO_NUMBER(B.WAIT_MEANTIME) * TO_NUMBER(B.WAIT_CNT)) AS EXPECT_TIME 
+            , DECODE(B.OPEN_STATE,'OPEN','TRUE','FALSE') AS OPEN_STATE
+            , NVL(RATE, 0) AS RATE
+            , ( SELECT ORG_FILE_NAME  FROM WE_ATTACH_FILE WHERE FILE_ID = ( SELECT MAX(FILE_ID) FROM WE_STORE_IMG WHERE STORE_ID = #{storeId} AND SHOW_ORDER = '1')) AS IMG
+            , ( SELECT MENU_NAME FROM WE_MENU WHERE STORE_ID = #{storeId} AND FIRST_YN = 'Y' ) AS MENU_NAME
+            , ( SELECT ORG_FILE_NAME  FROM WE_ATTACH_FILE WHERE FILE_ID = ( SELECT MAX(FILE_ID) FROM WE_STORE_IMG WHERE STORE_ID = 8 AND TYPE = 'LOGO' ) ) AS LOGO
+        FROM (
+            SELECT
+                A.STORE_ID
+                , A.STORE_NAME
+                , ( SELECT COUNT(*) FROM WE_TICKET WHERE STORE_ID = A.STORE_ID ) AS WAIT_CNT
+                , A.OPEN_STATE
+                , A.WAIT_MEANTIME
+                , C.LAT
+                , C.LON
+                , ( SELECT AVG(RATE) AS RATE FROM WE_REVIEW WHERE STORE_ID = A.STORE_ID AND DEL_YN IS NULL ) AS RATE
+            FROM WE_STORE A, WE_STORE_DETAILS C
+            WHERE A.STORE_ID = C.STORE_ID (+)
+            AND A.STORE_ID = #{storeId}
+        ) B
+        ORDER BY WAIT_CNT DESC
+	</select>
+	
+	<!-- 매장별 콜할 대기인원수 조회   -->
+	<select id="selectCallCnt" parameterType="HashMap" resultType="ExqueryMap" >
+    	 SELECT CALL_CNT FROM WE_STORE WHERE STORE_ID = #{storeId}
+	</select>
+	
+	<!-- 매장 옵션 사용여부를 조회   -->
+	<select id="selectIsExistOption" parameterType="HashMap" resultType="ExqueryMap" >
+    	 SELECT OPTION_YN FROM WE_STORE
+		 WHERE STORE_ID = #{storeId}
+	</select>
+	
+	<!-- 매장 옵션 조회   -->
+	<select id="selectOptionList" parameterType="HashMap" resultType="ExqueryMap" >
+    	 SELECT SEQ_ID, OPTION_NAME FROM WE_OPTION
+		 WHERE STORE_ID = #{storeId}
+		 ORDER BY SEQ_ID
+	</select>
+</mapper>

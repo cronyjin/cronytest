@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans.xsd">
+ 
+	<bean id="WelcomePage" class="org.springframework.web.servlet.view.JstlView">
+		<property name="url" value="/WEB-INF/pages/WelcomePage.jsp" />
+	</bean>
+ 
+ 
+	<bean id="jxlsView" class="select.spring.view.JxlsView">
+	 	<property name="contentType" value="application/vnd.ms-excel; charset=UTF-8"></property>
+	</bean>
+
+	<bean id="fileDownView" class="kr.co.user.weding.view.FileDownView" />
+	<bean id="ExcelPoiView" class="kr.co.user.weding.view.ExcelPoiView" />
+	
+	
+</beans>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+	
+	<!-- NS2U 측정값 저장 -->
+	<!-- 
+	<bean id="pointValuesStore" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="scheduleService" />
+		<property name="targetMethod" value="pointValuesStore" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="pointValuesStoreTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="pointValuesStore" />
+		<property name="cronExpression" value="0 * * * * ?" />
+	</bean> 
+	-->	
+	<!-- PV 요약처리 시간별 -->
+	<!-- 
+	<bean id="pvSummaryHour" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="scheduleService" />
+		<property name="targetMethod" value="pvSummaryHour" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="pvSummaryHourTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="pvSummaryHour" />
+		<property name="cronExpression" value="0 */15 * * * ?" />
+	</bean> 	
+    -->
+	<!-- PV 요약처리 일별  -->
+	<!-- 
+	<bean id="pvSummaryDay" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="scheduleService" />
+		<property name="targetMethod" value="pvSummaryDay" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="pvSummaryDayTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="pvSummaryDay" />
+		<property name="cronExpression" value="0 1 * * * ?" />
+	</bean> 	
+	-->
+	<!-- PV 요약처리 월별  -->
+	<!-- 
+	<bean id="pvSummaryMonth" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="scheduleService" />
+		<property name="targetMethod" value="pvSummaryMonth" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="pvSummaryMonthTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="pvSummaryMonth" />
+		<property name="cronExpression" value="0 0 1 * * ?" />
+	</bean> 	
+	-->
+	<!-- 에너지사용 요약처리 시간별 -->
+	<!-- 
+	<bean id="engSummaryHour" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="scheduleService" />
+		<property name="targetMethod" value="engSummaryHour" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="engSummaryHourTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="engSummaryHour" />
+		<property name="cronExpression" value="0 */15 * * * ?" />
+	</bean> 	
+	-->
+	<!-- 에너지사용 요약처리 일별  -->
+	<!-- 
+	<bean id="engSummaryDay" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="scheduleService" />
+		<property name="targetMethod" value="engSummaryDay" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="engSummaryDayTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="engSummaryDay" />
+		<property name="cronExpression" value="0 1 * * * ?" />
+	</bean> 	
+	-->
+	<!-- 에너지사용 요약처리 월별  -->
+	<!-- 
+	<bean id="engSummaryMonth" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="scheduleService" />
+		<property name="targetMethod" value="engSummaryMonth" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="engSummaryMonthTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="engSummaryMonth" />
+		<property name="cronExpression" value="0 0 1 * * ?" />
+	</bean> 	
+	-->
+	<!-- 전력피크 측정값  -->
+	<!-- 
+	<bean id="powerPeak15Min" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="scheduleService" />
+		<property name="targetMethod" value="powerPeak15Min" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="powerPeak15MinTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="powerPeak15Min" />
+		<property name="cronExpression" value="0 * * * * ?" />
+	</bean> 
+	-->
+	<!-- 전력피크 월별  -->
+	<!-- 
+	<bean id="powerPeakMonth" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="scheduleService" />
+		<property name="targetMethod" value="powerPeakMonth" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="powerPeakMonthTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="powerPeakMonth" />
+		<property name="cronExpression" value="0 0 1 * * ?" />
+	</bean> 	
+
+	<bean id="schedulerFactoryBean" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="pointValuesStoreTrigger" />
+				<ref bean="pvSummaryHourTrigger" />
+				<ref bean="pvSummaryDayTrigger" />
+				<ref bean="pvSummaryMonthTrigger" />
+				<ref bean="engSummaryHourTrigger" />
+				<ref bean="engSummaryDayTrigger" />
+				<ref bean="engSummaryMonthTrigger" />
+				<ref bean="powerPeak15MinTrigger" />
+				<ref bean="powerPeakMonthTrigger" />
+			</list>
+		</property>
+	</bean>
+	-->
+</beans>

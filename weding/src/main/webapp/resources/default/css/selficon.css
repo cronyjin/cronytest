@@ -1,0 +1,61 @@
+@font-face {
+	font-family: 'selficon';
+	src:url('../fonts/selficon.eot?l3d8z9');
+	src:url('../fonts/selficon.eot?#iefixl3d8z9') format('embedded-opentype'),
+		url('../fonts/selficon.woff?l3d8z9') format('woff'),
+		url('../fonts/selficon.ttf?l3d8z9') format('truetype'),
+		url('../fonts/selficon.svg?l3d8z9#selficon') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+[class^="self_"], [class*=" self_"] {
+	font-family: 'selficon';
+	speak: none;
+	font-style: normal;
+	font-size:inherit;
+	font-weight: 100;
+	font-variant: normal;
+	text-transform: none;
+	vertical-align:middle;
+
+	/* Better Font Rendering =========== */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.self_full_goods:before {
+	content: "\e607";
+}
+
+.self_half_goods:before {
+	content: "\e608";
+}
+
+.self_bullet:before {
+	content: "\e602";
+}
+
+.self_help:before {
+	content: "\e603";
+}
+
+.self_message:before {
+	content: "\e604";
+}
+
+.self_nav:before {
+	content: "\e605";
+}
+
+.self_star:before {
+	content: "\e606";
+}
+
+.self_nav_open:before {
+	content: "\e600";
+}
+
+.self_nav_close:before {
+	content: "\e601";
+}

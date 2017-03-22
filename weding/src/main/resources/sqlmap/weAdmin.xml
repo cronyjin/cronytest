@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="nse.weAdmin">
+
+	<!-- 쎄션에서 사용하는 사용자 1건 (BP_USER) 조회 -->
+	<select id="selectUserSession" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT 
+			ADMIN_ID AS SS_ADMIN_ID
+            , ADMIN_NAME AS SS_ADMIN_NAME
+            , PASSWORD AS SS_ADMIN_PASS
+            , STORE_ID
+		FROM WE_ADMIN
+        WHERE ADMIN_ID = #{ssAdminId}
+	</select>
+	
+ 	<!-- 가입여부조회  -->
+	<select id="selectAdminId" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT STORE_ID FROM WE_ADMIN
+		WHERE ( ADMIN_ID = #{id} AND PASSWORD = #{pw} )
+	</select>
+	
+ 	<!-- 매장상태조회  -->
+	<select id="selectStoreState" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT
+            Q.CNT
+            , (Q.CNT * W.WAIT_MEANTIME) AS WAIT_TIME
+            , W.OPEN_STATE
+        FROM (
+        SELECT 
+            COUNT(*) AS CNT
+        FROM WE_TICKET
+        WHERE STORE_ID = #{storeId} ) Q, WE_STORE W
+        WHERE STORE_ID = #{storeId}
+	</select>
+	
+	<!-- 매장 시작/중지  -->
+    <update id="updateStoreState" parameterType="HashMap" >
+      UPDATE WE_STORE
+		SET 
+		    OPEN_STATE = #{change}
+		    , UPD_TIME = SYSDATE
+		WHERE STORE_ID = #{storeId}
+    </update>
+	
+ 	<!-- 매장 대기정보 조회  -->
+	<select id="selectStoreWait" parameterType="HashMap" resultType="ExqueryMap" >
+        SELECT
+		    ORDER_ID
+		    , DECODE(OPTION_NAME,NULL,USER_NAME,USER_NAME || ' | ' || OPTION_NAME) as USER_NAME
+		    , MOBILE_NO
+		    , MOBILE_NO_STR
+		    , USER_ID
+		FROM (
+		SELECT 
+		            A.ORDER_ID
+		            , C.USER_NAME || '(' || A.WAIT || '명)' AS USER_NAME
+		            , B.MOBILE_NO
+		            , REPLACE(REPLACE(TO_CHAR(TO_NUMBER(B.MOBILE_NO), 'FM099,9999,9999'), ',','-'), ' ','') AS MOBILE_NO_STR
+		            , B.USER_ID
+		            , ( SELECT OPTION_NAME FROM WE_OPTION WHERE STORE_ID = #{storeId} AND SEQ_ID = A.OPTION_ID ) AS OPTION_NAME
+		        FROM WE_TICKET A, WE_USER B, WE_TICKET_SUMMARY C
+		        WHERE A.USER_ID = B.USER_ID 
+		        AND A.TICKET_ID = C.TICKET_ID
+		        AND A.STORE_ID = #{storeId}
+		        ORDER BY ORDER_ID ASC
+		)
+	</select>
+	
+ 	<!-- 매장상태조회  -->
+	<select id="selectAdminStoreInfo" parameterType="HashMap" resultType="ExqueryMap" >
+		        SELECT
+            B.STORE_NAME
+            , B.OPEN_STATE
+            , A.ADMIN_NAME
+            , A.ADMIN_ID
+            , (SELECT COUNT(*) FROM WE_TICKET_SUMMARY WHERE OPEN_DAY = TO_CHAR(SYSDATE, 'YYYYMMDD') AND STORE_ID = A.STORE_ID) AS CNT
+        FROM WE_ADMIN A, WE_STORE B
+        WHERE A.STORE_ID = B.STORE_ID
+        AND ADMIN_ID = #{adminId}
+	</select>
+	
+ 	<!-- 매장상태조회  -->
+	<select id="selectNotice" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT
+		    TITLE
+		    , DETAILS
+		    , TO_CHAR(REG_TIME, 'YYYY-MM-DD') AS REG_TIME
+		FROM WE_BOARD
+		WHERE BOARD_ID = 1
+		AND NOTICE_YN = 'Y'
+		ORDER BY REG_TIME DESC
+	</select>
+	
+	
+ 	<!-- #####웹 관리자####  -->
+ 	
+ 	
+ 	
+ 	<!-- 일별대기자통계  -->
+	<select id="selectDaylyAnal" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT
+		     TO_CHAR(TO_DATE(PROC_DATE, 'YYYYMMDD'), 'YYYY-MM-DD') AS PROC_DATE
+		    , TO_DATE(PROC_DATE, 'YYYYMMDD') AS X
+    		, SUM(CNT) AS Y
+		    , AVG(TOTAL_WAIT_TIME) AS AVG_TIME
+		FROM (
+		        SELECT 
+		             TO_CHAR(WAIT_START_TIME, 'YYYYMMDD') AS PROC_DATE
+		            , TOTAL_WAIT_TIME
+            		, 1 AS CNT
+		        FROM WE_TICKET_SUMMARY
+		        WHERE STORE_ID = ( SELECT STORE_ID FROM WE_ADMIN WHERE ADMIN_ID = 'katsumama' )
+		        AND TICKET_STATE = 'COMP'
+		        AND TOTAL_WAIT_TIME &lt; 60
+		        AND TOTAL_WAIT_TIME > 0
+		)
+		GROUP BY PROC_DATE
+		ORDER BY X
+	</select>
+</mapper>

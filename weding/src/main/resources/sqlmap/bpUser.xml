@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="nse.bpUser">
+
+<!-- 
+관련테이블 : BP_USER 
+use sql :  id / resultMap 
+	selectByPk		/ Result1
+	selectByParam	/ Result1
+	insert
+	updateByPk
+	deleteByPk
+-->
+
+	<!-- 사용자 일괄입력/수정 -->
+    <update id="mergeUser" parameterType="HashMap" >
+    
+        MERGE INTO BF_USER
+            USING DUAL
+            ON( USER_ID = #{userId})
+        WHEN MATCHED THEN
+            UPDATE SET
+	             USER_NAME		= #{userName}
+	            , PASSWORD		= #{password}
+	            , CORP_NO		= #{corpNo}
+	            , DEPT_NAME		= #{deptName}
+	            , DUTY			= #{duty}
+	            , PHONE_NO		= #{phoneNo}
+	            , MOBILE_NO		= #{mobileNo}
+	            , EMAIL			= #{email}
+	            , BIZ_CHARGE	= #{bizCharge}
+	            , BIZ_GRP		= #{bizGrp}
+	            , MAIN_CD		= #{mainCd}
+	            , ACCESS_YN		= #{accessYn}
+                , UPD_TIME		= SYSDATE
+                , UPD_ID	 	= #{ssUserId}
+        WHEN NOT MATCHED THEN
+                INSERT (USER_ID, USER_NAME, PASSWORD, CORP_NO, DEPT_NAME, DUTY, PHONE_NO,
+                		MOBILE_NO, EMAIL, BIZ_CHARGE, BIZ_GRP, MAIN_CD, ACCESS_YN,
+                		REG_TIME, REG_ID, UPD_TIME, UPD_ID ) 
+                VALUES (#{userId}, #{userName}, #{password}, #{corpNo}, #{deptName}, #{duty},
+                		#{phoneNo}, #{mobileNo}, #{email}, #{bizCharge}, #{bizGrp}, #{mainCd}, #{accessYn},
+                		 SYSDATE, #{ssUserId}, SYSDATE, #{ssUserId})
+                              
+    </update>
+    
+ 	
+	<select id="selectStore" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT * FROM WE_STORE 
+	</select>
+ 
+	<!-- 개인정보수정 조회(화면설정 tab) -->
+	<select id="selectUserInfoDisp" parameterType="HashMap" resultType="ExqueryMap" >
+	
+	   SELECT STYLE_TYPE
+	   		, MAIN_CD
+			, (SELECT NAME${ssSqlLang} FROM BP_PROGRAM B WHERE B.PROGRAM_CD = A.MAIN_CD) AS MAIN_NAME 
+		 FROM BP_USER A
+    	WHERE USER_ID = #{ssUserId}
+    	 
+	</select>
+ 	
+ 	<!-- 개인정보수정 수정 -->
+	<update id="updateUserInfo" parameterType="HashMap" >
+		UPDATE BP_USER
+		<set>
+			<if test='userName != null'>
+				USER_NAME = #{userName},
+			</if> 
+			<if test='corpNo != null'>
+				CORP_NO = #{corpNo},
+			</if>
+			<if test='deptName != null'>
+				DEPT_NAME = #{deptName},
+			</if>
+			<if test='duty != null'>
+				DUTY = #{duty},
+			</if>
+			<if test='phoneNo != null'>
+				PHONE_NO = #{phoneNo},
+			</if>
+			<if test='mobileNo != null'>
+				MOBILE_NO = #{mobileNo},
+			</if>
+			<if test='email != null'>
+				EMAIL = #{email},
+			</if>
+			<if test='bizCharge != null'>
+				BIZ_CHARGE = #{bizCharge},
+			</if>
+			<if test='styleType != null and  styleType != "" '>
+				STYLE_TYPE = #{styleType},
+			</if>
+			<if test='mainCd != null and  mainCd != "" '>
+				MAIN_CD = #{mainCd},
+			</if>
+			<if test='newPassword != null'>
+				PASSWORD = #{newPassword},
+			</if>
+			UPD_ID = #{ssUserId},
+			UPD_TIME = SYSDATE 
+		</set>
+		WHERE USER_ID = #{ssUserId}
+	</update>
+ 	
+	<!-- 개인정보수정 조회 (개인정보 tab) -->
+	<select id="selectUserInfoOne" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT USER_ID
+             , USER_NAME
+             --, PASSWORD
+             , CORP_NO
+             , DEPT_NAME
+             , DUTY
+             , PHONE_NO
+             , MOBILE_NO
+             , EMAIL
+             , BIZ_CHARGE
+             , BIZ_GRP
+             , MAIN_CD
+             , ACCESS_YN
+             , REG_TIME
+             , REG_ID
+             , UPD_TIME
+             , UPD_ID
+		FROM BP_USER
+    	WHERE USER_ID = #{ssUserId} 
+	</select>
+ 	
+ 	 	
+	<!-- 개인정보수정 비밀번호 구하기 -->
+	<select id="selectUserInfoPassOne" parameterType="HashMap" resultType="ExqueryMap" >
+    	SELECT  PASSWORD
+		FROM BP_USER
+    	WHERE USER_ID = #{ssUserId} 
+	</select>
+ 	
+ 	<!-- 사용자 (NP_USER) 입력 -->
+	<insert id="insertUser" parameterType="HashMap" >
+		INSERT INTO BP_USER (
+			  USER_ID
+            , USER_NAME
+            , PASSWORD
+            , CORP_NO
+            , DEPT_NAME
+            , DUTY
+            , PHONE_NO
+            , MOBILE_NO
+            , EMAIL
+            , BIZ_CHARGE
+            , ACCESS_YN
+            , REG_TIME
+            , REG_ID
+            , UPD_TIME
+            , UPD_ID
+		) VALUES (
+			#{userId}
+		  , #{userName}
+		  , #{password}
+		  , #{corpNo}
+		  , #{deptName}
+		  , #{duty}
+		  , #{phoneNo}
+		  , #{mobileNo}
+		  , #{email}
+		  , #{bizCharge}
+		  , #{accessYn}
+		  , SYSDATE
+		  , #{ssUserId}
+          , SYSDATE
+          , #{ssUserId}
+		)    
+	</insert>
+	
+	<!-- 사용자 () 수정 -->
+	<update id="updateUser" parameterType="HashMap" >
+		UPDATE BP_USER
+		<set>
+			USER_NAME = #{userName} 
+			, PASSWORD = #{password} 
+			, CORP_NO = #{corpNo}
+			, DEPT_NAME = #{deptName}
+			, DUTY = #{duty}
+			, PHONE_NO = #{phoneNo}
+			, MOBILE_NO = #{mobileNo}
+			, EMAIL = #{email}
+			, BIZ_CHARGE = #{bizCharge}
+			, ACCESS_YN = #{accessYn}
+			, UPD_ID = #{ssUserId}
+			, UPD_TIME = SYSDATE 
+		</set>
+		WHERE USER_ID = #{userId}
+	</update>
+ 
+ 	<!-- 사용자 (BP_USER) 삭제 -->
+	<delete id="deleteUser" parameterType="HashMap" >
+		DELETE
+		FROM  BP_USER
+		WHERE USER_ID = #{userId}
+	</delete>
+ 
+ 
+ 
+ 
+	<!-- 쎄션에서 사용하는 사용자 1건 (BP_USER) 조회 -->
+	<select id="selectUserSession" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT 
+			USER_ID AS SS_USER_ID
+            , USER_NAME AS SS_USER_NAME
+            , PASSWORD AS SS_USER_PASS
+            , ACCESS_YN AS ACCESS_YN
+--			, NVL((SELECT OPT1 FROM BP_CODE WHERE CODE_GB_CD = 'STYLE_TYPE' AND CODE = STYLE_TYPE), 'bootstrap.css') AS SS_COLOR_STYLE
+		FROM BP_USER
+        WHERE USER_ID = #{ssUserId}
+	</select>
+	
+	
+	<!-- 사용자 (BP_USER) 입력 -->
+	<insert id="insertUserSet" parameterType="HashMap" >
+		INSERT INTO BP_USER_SET (
+              USER_ID
+            , CODE
+            , VAL
+            , REG_TIME
+            , REG_ID
+            , UPD_TIME
+            , UPD_ID
+        ) VALUES (
+            #{userId}
+          , 'dashboard'
+          , 'A'
+          , SYSDATE
+          , #{regId}
+          , SYSDATE
+          , #{updId}
+        )   
+	</insert>
+	
+	<!-- 사용자 (bizGrp) 수정 -->
+	<update id="updateBizGrp" parameterType="HashMap" >
+		UPDATE BP_USER
+		<set>
+			  BIZ_GRP = #{bizGrp} 
+			, UPD_ID = #{ssUserId}
+			, UPD_TIME = SYSDATE
+		</set>
+		WHERE USER_ID = #{userId}
+	</update>
+	
+	<!-- 사용자 (bizGrp) 삭제 -->
+	<update id="deleteBizGrp" parameterType="HashMap" >
+		UPDATE BP_USER
+		<set>
+			  BIZ_GRP = ''
+			, UPD_ID = #{ssUserId}
+			, UPD_TIME = SYSDATE
+		</set>
+		WHERE USER_ID = #{userId}
+	</update>
+	
+	<!-- 사용자메뉴 입력 -->
+	<insert id="insertUserMenu" parameterType="HashMap" >
+		 INSERT INTO BP_USER_PROGRAM (
+            USER_ID
+          , PROGRAM_CD
+          , READ
+          , EXE 
+          , REG_TIME
+          , REG_ID
+          , UPD_TIME
+          , UPD_ID
+        ) VALUES (
+            #{userId}
+          , #{programCd}
+          , #{read}
+          , #{exe}
+          , SYSDATE
+          , #{ssUserId}
+          , SYSDATE
+          , #{ssUserId}
+        )    
+	</insert>
+	
+	<!-- 사용자메뉴 수정 -->
+	<update id="updateUserMenu" parameterType="HashMap" >
+		UPDATE BP_USER_PROGRAM
+		<set>
+			UPD_ID = #{ssUserId}
+			, UPD_TIME = SYSDATE 
+			<if test='exe != null and  exe != "" '>
+			, EXE = #{exe} 
+			</if>
+			<if test='read != null and  read != "" '>
+			, READ = #{read} 
+			</if>
+		</set>
+		WHERE USER_ID = #{userId}
+		AND PROGRAM_CD = #{programCd}
+	</update>
+	<!-- 메인메뉴수정 -->
+	<update id="updateUserMainMenu" parameterType="HashMap" >
+		UPDATE BP_USER 
+        SET MAIN_CD = ''
+		WHERE USER_ID = #{userId}
+		AND MAIN_CD = #{programCd}
+	</update>
+	<!-- 메인메뉴수정 -->
+	<update id="updateUserMainMenuDel" parameterType="HashMap" >
+		UPDATE BP_USER 
+        SET MAIN_CD = ''
+		WHERE USER_ID = #{userId}
+	</update>
+	
+	<!-- 사용자 메뉴 삭제 -->
+	<delete id="deleteUserMenu" parameterType="HashMap" >
+		DELETE
+		FROM  BP_USER_PROGRAM
+		WHERE USER_ID = #{userId}
+	</delete>
+	<!-- 사용자 메인매뉴 삭제 -->
+	<delete id="deleteUserSet" parameterType="HashMap" >
+		DELETE
+		FROM  BP_USER_SET
+		WHERE USER_ID = #{userId}
+	</delete>
+	
+	<!-- 로그인정보 저장 -->
+	<insert id="insertUserLog" parameterType="HashMap" >
+		 INSERT INTO BP_USER_LOG (
+            LOG_ID
+            , USER_ID
+            , USE_DATE
+            , PROGRAM_CD
+			<if test='logUserIp != null and  logUserIp != "" '>
+            , USER_IP
+            </if>
+			<if test='logAction != null and  logAction != "" '>
+            , ACTION
+            </if>
+			<if test='logDetails != null and  logDetails != "" '>
+            , DETAILS
+            </if>
+            , REG_TIME
+        ) VALUES (
+			SEQ_BP_LOG_ID.NEXTVAL
+		  , #{logUserId}
+          , SYSDATE
+		  , #{logProgramCd}
+		  <if test='logUserIp != null and  logUserIp != "" '>
+		  , #{logUserIp}
+		  </if>
+		  <if test='logAction != null and  logAction != "" '>
+		  , #{logAction}
+		  </if>
+		  <if test='logDetails != null and  logDetails != "" '>
+		  , #{logDetails}
+		  </if>
+          , SYSDATE
+        )  
+	</insert>
+	
+	<!-- 사용자로그 조회 -->
+	<select id="selectUserLogList" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT
+			  A.LOG_ID
+			, A.USER_ID
+			, B.USER_NAME
+			, TO_CHAR( TO_DATE(A.USE_DT, 'YYYY-MM-DD HH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS USE_DT
+			, SUBSTR(A.USE_DT,5,4) X
+			, SUBSTR(A.USE_DT,9,2) Y
+			, NVL(A.PROGRAM_CD, ' ') AS PROGRAM_CD
+			, NVL(A.USER_IP, ' ') AS USER_IP
+			, NVL(A.ACTION, ' ') AS ACTION
+			, NVL2(A.DETAILS, 'Detail', ' ') AS BUTTON_LABEL
+			, NVL2(A.DETAILS, ( SUBSTR(A.DETAILS, 0, 20) || '...'), ' ') AS DETAILS_SUMMARY
+			, A.DETAILS AS DETAILS
+		FROM  BP_USER_LOG A, BP_USER B
+		WHERE A.USER_ID = B.USER_ID
+		<if test='startTime != null and  endTime != "" '>
+		  AND A.USE_DT BETWEEN #{startTime} AND #{endTime}
+		</if>
+		<if test='dispName != null and  dispName != "" '>
+  		  AND (A.USER_ID LIKE '%${dispName}%' OR B.USER_NAME LIKE '%${dispName}%' )
+		</if>
+		<if test='actionType != null and  actionType != "" '>
+  		  AND A.ACTION = #{actionType}
+		</if>
+		<if test='programCd != null and  programCd != "" '>
+  		  AND ( A.PROGRAM_CD LIKE '%${programCd}%' )
+		</if>
+		<if test='logId != null and  logId != "" '>
+  		  AND A.LOG_ID = #{logId}
+		</if>
+		ORDER BY A.REG_TIME DESC
+	</select>
+	<!-- 사용자로그 조회 -->
+	<select id="selectUserLogListChart" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT
+			 TO_CHAR( TO_DATE(A.USE_DT, 'YYYY-MM-DD HH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS NAME
+			, TO_DATE(A.USE_DT, 'YYYYMMDDHH24MISS') AS X
+			, TO_NUMBER(SUBSTR(A.USE_DT,9,2)) Y
+			, B.USER_NAME
+		FROM  BP_USER_LOG A, BP_USER B
+		WHERE A.USER_ID = B.USER_ID
+		<if test='startTime != null and  endTime != "" '>
+		  AND A.USE_DT BETWEEN #{startTime} AND #{endTime}
+		</if>
+		<if test='dispName != null and  dispName != "" '>
+  		  AND (A.USER_ID LIKE '%${dispName}%' OR B.USER_NAME LIKE '%${dispName}%' )
+		</if>
+		<if test='actionType != null and  actionType != "" '>
+  		  AND A.ACTION = #{actionType}
+		</if>
+		<if test='programCd != null and  programCd != "" '>
+  		  AND ( A.PROGRAM_CD LIKE '%${programCd}%' )
+		</if>
+		<if test='logId != null and  logId != "" '>
+  		  AND A.LOG_ID = #{logId}
+		</if>
+		ORDER BY A.REG_TIME DESC
+	</select>
+
+	<!-- 사용자로그 ACTION 조회 -->
+	<select id="selectUserLogAction" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT
+			A.ACTION AS TEXT
+			, A.ACTION AS VALUE
+		FROM 
+			( SELECT
+				DISTINCT(ACTION) AS ACTION
+				FROM 
+					BP_USER_LOG
+				WHERE ACTION IS NOT NULL
+			) A
+		ORDER BY TEXT	
+	</select>
+
+	<!-- 사용자별 메인화면 조회 -->
+	<select id="selectUserMainShow" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT
+			NVL2(
+				A.MAIN_CD
+				, (SELECT URL FROM BP_PROGRAM WHERE PROGRAM_CD = A.MAIN_CD)
+				, (SELECT URL FROM BP_PROGRAM WHERE MAIN_YN = 'Y')
+			) AS URL
+		FROM BP_USER A
+		WHERE USER_ID = #{ssUserId}
+	</select>
+	
+		
+	<!-- 직무그룹 조회 -->
+	<select id="selectBizGroupType" parameterType="HashMap" resultType="ExqueryMap" >
+        SELECT CODE AS VALUE
+             , CODE_NAME${ssSqlLang} AS TEXT  
+          FROM BP_CODE
+         WHERE CODE_GB_CD = 'BIZ_GRP'
+         ORDER BY CODE_NAME${ssSqlLang}
+	</select>		
+
+		 
+</mapper>

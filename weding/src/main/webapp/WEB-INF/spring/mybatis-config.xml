@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<settings>
+		<setting name="cacheEnabled" value="false"/>
+		<setting name="lazyLoadingEnabled" value="true"/>
+		<setting name="multipleResultSetsEnabled" value="true"/>
+		<setting name="useColumnLabel" value="true"/>
+		<setting name="useGeneratedKeys" value="false"/>
+		<setting name="autoMappingBehavior" value="PARTIAL"/>
+		<setting name="defaultExecutorType" value="REUSE"/>
+		<setting name="safeRowBoundsEnabled" value="false"/>
+		<setting name="mapUnderscoreToCamelCase" value="false"/>
+		<setting name="localCacheScope" value="SESSION"/>
+		<setting name="jdbcTypeForNull" value="OTHER"/>
+		<setting name="lazyLoadTriggerMethods" value="equals,clone,hashCode,toString"/>
+		<setting name="callSettersOnNulls" value="true"/>
+	</settings>
+	<typeAliases>
+		<typeAlias type="select.spring.exquery.utils.ExqueryMap" alias="ExqueryMap"/>
+		<typeAlias type="java.util.Map" alias="Map"/>
+		<typeAlias type="java.util.HashMap" alias="HashMap"/>
+	</typeAliases> 
+	<plugins>
+	  <plugin interceptor="com.daehanins.common.MybatisLogInterceptor" />
+	</plugins>
+    <mappers>
+        <mapper resource="select/spring/exquery/mappers/exquery_oracle.xml"/>
+        
+		<mapper resource="sqlmap/bpUser.xml" />
+		
+		
+		<mapper resource="sqlmap/weStore.xml" />
+		<mapper resource="sqlmap/weUser.xml" />
+		<mapper resource="sqlmap/weAdmin.xml" />
+		<mapper resource="sqlmap/weMessage.xml" />
+    </mappers>
+</configuration>

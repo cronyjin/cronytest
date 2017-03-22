@@ -1,0 +1,5 @@
+/*alert*/
+.alert{position:absolute; top:270px; left:50%; margin-left:-140px; width:280px; padding:30px 20px 20px; box-sizing:border-box; background-color:#fff; background-repeat:no-repeat; background-position:-35px -19px; background-size:157px auto; border-radius:10px; box-shadow:0 0 3px rgba(0,0,0,1.00); z-index:16;}
+.alert.qst{background-image:url(../img/alert_q.png);} .alert.wrn{background-image:url(../img/bg/alert_w.png);}
+.alert p.txt{font-size:1.05em; line-height:1.5em; text-align:center;}
+.alert p.btnwrap{margin:20px 0;} .alert .btn{height:35px; line-height:35px; font-size:1.1em;}

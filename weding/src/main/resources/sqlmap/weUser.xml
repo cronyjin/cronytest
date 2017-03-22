@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="nse.weUser">
+
+ 	<!-- 가입여부조회  -->
+	<select id="selectUserId" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT USER_ID FROM WE_USER
+		WHERE MOBILE_NO = #{phonNumber} 
+	</select>
+
+ 	<!-- 인증번호발송횟수조회  -->
+	<select id="selectSendComfirmCount" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT COUNT(*) AS CNT FROM WE_SEND_CONFIRM
+		WHERE TO_DATE(TO_CHAR(REG_DATE,'YYYYMMDD'), 'YYYYMMDD') = TO_DATE(TO_CHAR(SYSDATE, 'YYYYMMDD'), 'YYYYMMDD') 
+		AND MOBILE_NO = #{phonNumber} 
+	</select>
+
+	<!-- 인증번호 발송정보를 저장한다. -->
+	<insert id="insertSendConfirm" parameterType="HashMap" >
+		INSERT INTO WE_SEND_CONFIRM (
+			  MOBILE_NO
+            , REG_DATE
+            , CONFIRM_NO
+		) VALUES (
+			#{phonNumber}
+			, SYSDATE
+			, #{confirmNo}
+		)    
+	</insert>
+
+	<!-- 발송된 인증번호를 조회한다.  -->
+	<select id="selectComfirmNumber" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT
+		    REG_DATE
+		    , CONFIRM_NO
+    		, ROUND(TO_NUMBER((((SYSDATE - REG_DATE) * 24) * 60) * 60),0) AS SECOND_COUNT
+		FROM (
+		    SELECT REG_DATE, CONFIRM_NO FROM WE_SEND_CONFIRM
+		    WHERE MOBILE_NO = #{phonNumber}
+		    ORDER BY REG_DATE DESC
+		)
+		WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 약관을 조회한다.  -->
+	<select id="selectTerms" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT ETC_MSG FROM WE_SYSTEM_MESSAGE
+		WHERE MSG_CD = #{termCode}
+	</select>
+	
+	<!-- 사용자 정보를 저장한다. -->
+	<insert id="insertUserInfo" parameterType="HashMap" >
+		<selectKey resultType="int" keyProperty="newId" order="BEFORE">
+			SELECT  WE_USER_ID.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO WE_USER (
+			  USER_ID
+            , USER_NAME
+            , MOBILE_NO
+            , REG_TIME
+            , UPD_TIME
+            , UPD_ID
+		) VALUES (
+			#{newId}
+			, #{name}
+			, #{phonNumber}
+			, SYSDATE
+			, SYSDATE
+			, #{newId}
+		)    
+	</insert>
+	
+	<!-- 나의정보조회  -->
+	<select id="getSettingUserInfo" parameterType="HashMap" resultType="ExqueryMap" >
+		SELECT USER_NAME, MOBILE_NO FROM WE_USER WHERE USER_ID = #{userId}
+	</select>
+	
+	<!-- 표시순서 변경 일괄-1  -->
+	<select id="setUserName" parameterType="HashMap" resultType="ExqueryMap" >
+    	UPDATE WE_USER
+		SET USER_NAME = #{userName}
+		WHERE USER_ID = #{userId}
+	</select>
+</mapper>

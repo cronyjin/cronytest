@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE tiles-definitions 
+	PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" 
+	"http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
+<tiles-definitions>
+
+	<!-- Default Main Template -->
+	<definition name="f:**" template="/WEB-INF/view/layout/default.jsp" >
+		<put-attribute name="top" 	value="/WEB-INF/view/layout/top.jsp" />
+		<put-attribute name="left" 	value="/WEB-INF/view/layout/left.jsp" />
+		<put-attribute name="body" 	value="/WEB-INF/view/pages/{1}.jsp"  />
+	</definition>
+
+	<!-- tablet Template -->
+	<definition name="m:**" template="/WEB-INF/view/layout/ipad.jsp" >
+	</definition>
+
+	<!-- Default POP Template -->
+	<definition name="p:**" template="/WEB-INF/view/layout/popup.jsp" >
+		<put-attribute name="body" value="/WEB-INF/view/pages/{1}.jsp"  />
+	</definition>
+	
+	<!-- Login Template -->
+	<definition name="g:**" template="/WEB-INF/view/layout/login.jsp" >
+	</definition>
+	
+	<!-- Ticket Template -->
+	<definition name="t:**" template="/WEB-INF/view/layout/ticket.jsp" >
+	</definition>
+	
+	<!-- Ticket Template null -->
+	<definition name="r:**" template="/WEB-INF/view/layout/ticket_null.jsp" >
+	</definition>
+	
+	<!-- Login Template -->
+	<definition name="e:**" template="/WEB-INF/view/layout/error.jsp" >
+	</definition>
+
+
+</tiles-definitions>
