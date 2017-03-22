@@ -26,7 +26,7 @@ import select.spring.util.ApplicationProperty;
 
 /**
  * Handles requests for the application home page.
- * 커밋테스트232255
+ * 커밋테스트232255666
  */
 @Controller
 public class AdminMenuController {
